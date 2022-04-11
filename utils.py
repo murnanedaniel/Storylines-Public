@@ -5,6 +5,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from tqdm import tqdm
+
 from newspaper import Article
 import openai
 
@@ -15,28 +17,40 @@ import asyncio
 # import common types
 from typing import List
 
+
 def parse_articles(article_list):
-    for article in article_list:
-        try:
-            article.download()
-            article.parse()
-        except: 
-            print(f"{article} could not be downloaded")
+    for article in tqdm(article_list):
+        parsed_article = parse_article(article)
+        if parsed_article is None:
             article_list.remove(article)
     return article_list
 
+def parse_article(article):
+    try:
+        article.download()
+        article.parse()
+    except: 
+        print(f"{article} could not be downloaded")
+        return None
+    return article
+
 def interpret_articles(article_list):
-    for i, article in enumerate(article_list):
-        try:
-            article.nlp()
-            if not article.summary:
-                print(f"{i, article.title} could not be summarized")
-                article_list.remove(article)
-        except: 
-            print(f"{i, article.title} could not be processed")
-            article_list.remove(article)
-        
+    for article in tqdm(article_list):
+        interpreted_article = interpret_article(article)
+        if interpreted_article is None:
+            article_list.remove(article)        
     return article_list
+
+def interpret_article(article):
+    try:
+        article.nlp()
+        if not article.summary:
+            print(f"{article.title} could not be summarized")
+            return None
+    except: 
+        print(f"{article.title} could not be processed")
+        return None
+    return article
 
 def embed_articles(articles: List[Article]) -> List[List[float]]:
     return [get_embedding(article.summary) for article in articles]
@@ -75,11 +89,11 @@ async def get(keywords, recency, api_key):
             # print(html)
             return html
 
-def get_news_results(keywords, recency=180):
+def get_news_results(keywords, api_key, recency=180):
 
     nest_asyncio.apply()
     loop = asyncio.get_event_loop()
-    coroutines = [get(keywords, recency)]
+    coroutines = [get(keywords, recency, api_key)]
 
     results = loop.run_until_complete(asyncio.gather(*coroutines))
 

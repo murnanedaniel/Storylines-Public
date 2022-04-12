@@ -1,4 +1,10 @@
 aiohttp==3.8.1
-aiosignal==1.2.0
+nest-asyncio==1.5.4
+asyncio==3.4.3
+newspaper3k==0.2.8
+sklearn
+numpy
+matplotlib
+openai
 voila
 ipywidgets

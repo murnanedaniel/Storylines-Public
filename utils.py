@@ -1,10 +1,5 @@
 # Imports
-import os
-import sys
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 from tqdm import tqdm
 
 from newspaper import Article
@@ -16,6 +11,7 @@ import asyncio
 
 # import common types
 from typing import List
+import ipywidgets as widgets
 
 
 def parse_articles(article_list):
@@ -98,3 +94,32 @@ def get_news_results(keywords, api_key, recency=180):
     results = loop.run_until_complete(asyncio.gather(*coroutines))
 
     return results[0]["entries"]
+
+def get_comparison(article_0, article_1, engine="text-davinci-002"):
+    
+    article_0_subset = " ".join(article_0["text"].replace("\n", " ").split(" ")[:300])
+    article_1_subset = " ".join(article_1["text"].replace("\n", " ").split(" ")[:300])
+
+    input_text = "Article 1: \n\n" + article_0_subset + "\n\nArticle 2: \n\n" + article_1_subset + "\n\nCompare the sentiment, context and political bias of these two articles."
+
+    return openai.Completion.create(
+        engine=engine,
+        prompt=input_text,
+        max_tokens=256,
+        temperature=0.8,
+    )
+
+
+def get_representative(cluster_embeddings, cluster_labels, cluster_articles, target_label):
+    cluster_mean = cluster_embeddings[cluster_labels == target_label].mean(axis=0)
+    cluster_distances = np.sqrt(np.sum((cluster_embeddings - cluster_mean)**2, axis=1))
+    cluster_representative_article = cluster_articles[np.argmin(cluster_distances)]
+    return cluster_representative_article
+
+# def build_button(func, description_text=None, tooltip_text=None, output_text=None):
+#     button = widgets.Button(description = description_text, tooltip = tooltip_text, layout = Layout(width = 'auto'))
+#     output = widgets.Output()
+
+#     def on_button_clicked(b):
+#         with output:
+#             func()
